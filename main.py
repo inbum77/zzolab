@@ -243,16 +243,16 @@ if selected_mbti:
         if i % 2 == 0:
             with col1:
                 if img is not None:
-                    st.image(img, caption=f"🎬 {name}", use_column_width=True)
+                    st.image(img, caption=f"🎬 {name}", use_container_width=True)
                 else:
                     # 이미지를 불러올 수 없을 때 대체 이미지 표시
                     placeholder = get_placeholder_image(name)
-                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_column_width=True)
+                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_container_width=True)
         else:
             with col2:
                 if img is not None:
-                    st.image(img, caption=f"🎬 {name}", use_column_width=True)
+                    st.image(img, caption=f"🎬 {name}", use_container_width=True)
                 else:
                     # 이미지를 불러올 수 없을 때 대체 이미지 표시
                     placeholder = get_placeholder_image(name)
-                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_column_width=True)
+                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_container_width=True)
