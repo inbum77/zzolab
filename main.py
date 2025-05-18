@@ -2,17 +2,37 @@ import streamlit as st
 import requests
 from PIL import Image
 from io import BytesIO
+import time
 
 # 이미지를 캐시하여 재사용하는 함수
 @st.cache_data
 def load_image(url):
     try:
-        response = requests.get(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        # 응답이 성공적인지 확인
+        if response.status_code != 200:
+            return None
+            
+        # 콘텐츠 유형이 이미지인지 확인
+        if 'image' not in response.headers.get('Content-Type', ''):
+            return None
+            
         img = Image.open(BytesIO(response.content))
         return img
     except Exception as e:
-        st.error(f"이미지를 불러오는 중 오류가 발생했습니다: {e}")
+        # 오류 메시지 기록만 하고 None 반환
+        print(f"이미지 로딩 오류 ({url}): {e}")
         return None
+
+# 이미지 URL이 문제가 있는 경우를 위한 대체 이미지
+def get_placeholder_image(name):
+    # 기본 색상으로 채워진 이미지 생성
+    img = Image.new('RGB', (200, 200), color=(240, 240, 240))
+    return img
 
 mbti_info = {
     "INTJ": {
@@ -22,8 +42,8 @@ mbti_info = {
         "장점_팁": "계획적인 면을 살려 프로젝트를 주도해보세요! 💼✨",
         "단점_팁": "감정을 나누고, 유연하게 대처하는 연습을 해보세요 🌿🗣️",
         "연예인": [
-            ("엘론 머스크", "https://upload.wikimedia.org/wikipedia/commons/e/ed/Elon_Musk_Royal_Society_%28crop1%29.jpg"),
-            ("아이유", "https://upload.wikimedia.org/wikipedia/commons/5/56/IU_at_Golden_Disc_Awards_2022.jpg")
+            ("엘론 머스크", "https://i.imgur.com/HfQRJGC.jpg"),
+            ("아이유", "https://i.imgur.com/xTzU7vz.jpg")
         ]
     },
     "INTP": {
@@ -33,8 +53,8 @@ mbti_info = {
         "장점_팁": "복잡한 문제 해결 능력을 연구나 기획에 활용해보세요! 🧪",
         "단점_팁": "소통을 통해 아이디어를 현실과 연결해보세요. 💬🔗",
         "연예인": [
-            ("앨버트 아인슈타인", "https://upload.wikimedia.org/wikipedia/commons/d/d3/Albert_Einstein_Head.jpg"),
-            ("공유", "https://upload.wikimedia.org/wikipedia/commons/b/bf/Gong_Yoo_from_acrofan.jpg")
+            ("앨버트 아인슈타인", "https://i.imgur.com/G9KMnFn.jpg"),
+            ("공유", "https://i.imgur.com/QxmYwRD.jpg")
         ]
     },
     "INFJ": {
@@ -225,10 +245,14 @@ if selected_mbti:
                 if img is not None:
                     st.image(img, caption=f"🎬 {name}", use_column_width=True)
                 else:
-                    st.write(f"🎬 {name}")
+                    # 이미지를 불러올 수 없을 때 대체 이미지 표시
+                    placeholder = get_placeholder_image(name)
+                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_column_width=True)
         else:
             with col2:
                 if img is not None:
                     st.image(img, caption=f"🎬 {name}", use_column_width=True)
                 else:
-                    st.write(f"🎬 {name}")
+                    # 이미지를 불러올 수 없을 때 대체 이미지 표시
+                    placeholder = get_placeholder_image(name)
+                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_column_width=True)
