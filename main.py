@@ -1,38 +1,60 @@
 import streamlit as st
-import requests
-from PIL import Image
+import base64
+from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
-import time
 
-# 이미지를 캐시하여 재사용하는 함수
-@st.cache_data
-def load_image(url):
-    try:
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        # 응답이 성공적인지 확인
-        if response.status_code != 200:
-            return None
-            
-        # 콘텐츠 유형이 이미지인지 확인
-        if 'image' not in response.headers.get('Content-Type', ''):
-            return None
-            
-        img = Image.open(BytesIO(response.content))
-        return img
-    except Exception as e:
-        # 오류 메시지 기록만 하고 None 반환
-        print(f"이미지 로딩 오류 ({url}): {e}")
-        return None
-
-# 이미지 URL이 문제가 있는 경우를 위한 대체 이미지
-def get_placeholder_image(name):
-    # 기본 색상으로 채워진 이미지 생성
-    img = Image.new('RGB', (200, 200), color=(240, 240, 240))
+# 텍스트로 이미지 생성하는 함수
+def create_text_image(name, bgColor=(240, 240, 240), textColor=(0, 0, 0), size=(200, 200)):
+    img = Image.new('RGB', size, color=bgColor)
+    draw = ImageDraw.Draw(img)
+    
+    # 텍스트 중앙에 배치
+    text = name
+    text_width = draw.textlength(text, font=None)
+    text_position = ((size[0] - text_width) / 2, size[1] / 2 - 10)
+    
+    # 텍스트 그리기
+    draw.text(text_position, text, fill=textColor)
+    
     return img
+
+# 이미지를 base64로 인코딩하여 표시하는 함수
+def get_image_base64(img):
+    buffered = BytesIO()
+    img.save(buffered, format="JPEG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return img_str
+
+# 캐릭터 이미지 생성 함수 (각 MBTI별 특색 있는 색상 사용)
+def get_character_image(name, mbti_type):
+    # MBTI 유형별 색상 매핑
+    color_map = {
+        "INTJ": (75, 0, 130),   # 보라색 - 분석가
+        "INTP": (0, 0, 139),    # 짙은 파란색 - 사색가
+        "INFJ": (147, 112, 219), # 라벤더색 - 예언자
+        "INFP": (221, 160, 221), # 연보라색 - 중재자
+        "ENTJ": (178, 34, 34),  # 적갈색 - 통솔자
+        "ENTP": (255, 69, 0),   # 주황빨간색 - 발명가
+        "ENFJ": (255, 20, 147), # 핫핑크 - 선도자
+        "ENFP": (255, 105, 180), # 분홍색 - 활동가
+        "ISTJ": (47, 79, 79),   # 짙은 회색 - 실무자
+        "ISTP": (105, 105, 105), # 회색 - 장인
+        "ISFJ": (107, 142, 35), # 올리브색 - 수호자
+        "ISFP": (154, 205, 50), # 연두색 - 탐험가
+        "ESTJ": (0, 100, 0),    # 짙은 녹색 - 경영자
+        "ESTP": (34, 139, 34),  # 녹색 - 기업가
+        "esfj": (70, 130, 180), # 강철 파란색 - 집정관
+        "ESFP": (30, 144, 255)  # 하늘색 - 연예인
+    }
+    
+    # 해당 MBTI 색상 가져오기 (기본값은 회색)
+    bg_color = color_map.get(mbti_type, (200, 200, 200))
+    
+    # 텍스트 색상은 배경 색상이 어두우면 밝게, 밝으면 어둡게
+    brightness = (bg_color[0] * 299 + bg_color[1] * 587 + bg_color[2] * 114) / 1000
+    text_color = (255, 255, 255) if brightness < 128 else (0, 0, 0)
+    
+    return create_text_image(name, bg_color, text_color)
 
 mbti_info = {
     "INTJ": {
@@ -42,8 +64,8 @@ mbti_info = {
         "장점_팁": "계획적인 면을 살려 프로젝트를 주도해보세요! 💼✨",
         "단점_팁": "감정을 나누고, 유연하게 대처하는 연습을 해보세요 🌿🗣️",
         "연예인": [
-            ("엘론 머스크", "https://i.imgur.com/HfQRJGC.jpg"),
-            ("아이유", "https://i.imgur.com/xTzU7vz.jpg")
+            "엘론 머스크",
+            "아이유"
         ]
     },
     "INTP": {
@@ -53,8 +75,8 @@ mbti_info = {
         "장점_팁": "복잡한 문제 해결 능력을 연구나 기획에 활용해보세요! 🧪",
         "단점_팁": "소통을 통해 아이디어를 현실과 연결해보세요. 💬🔗",
         "연예인": [
-            ("앨버트 아인슈타인", "https://i.imgur.com/G9KMnFn.jpg"),
-            ("공유", "https://i.imgur.com/QxmYwRD.jpg")
+            "앨버트 아인슈타인",
+            "공유"
         ]
     },
     "INFJ": {
@@ -64,8 +86,8 @@ mbti_info = {
         "장점_팁": "타인을 이해하고 돕는 능력을 상담이나 교육 분야에 살려보세요 🎓",
         "단점_팁": "스스로의 감정을 관리하며 자기 돌봄을 잊지 마세요 🌸",
         "연예인": [
-            ("칼 융", "https://upload.wikimedia.org/wikipedia/commons/0/0b/Carljung2.jpg"),
-            ("정해인", "https://upload.wikimedia.org/wikipedia/commons/1/12/Jung_Hae-in_from_ACROFAN.jpg")
+            "칼 융",
+            "정해인"
         ]
     },
     "INFP": {
@@ -75,8 +97,8 @@ mbti_info = {
         "장점_팁": "예술, 문학, 봉사활동 등 가치 있는 활동으로 표현해보세요 🎨",
         "단점_팁": "작은 결정부터 실천하며 현실감을 키워보세요 🪴",
         "연예인": [
-            ("윌리엄 셰익스피어", "https://upload.wikimedia.org/wikipedia/commons/a/a2/Shakespeare.jpg"),
-            ("태연", "https://upload.wikimedia.org/wikipedia/commons/2/25/Taeyeon_for_Elle_Korea_2023.jpg")
+            "윌리엄 셰익스피어",
+            "태연"
         ]
     },
     "ENTJ": {
@@ -86,8 +108,8 @@ mbti_info = {
         "장점_팁": "조직을 이끄는 리더 역할에서 진가를 발휘해보세요 🏢",
         "단점_팁": "주변 사람들의 감정을 살피고 배려하는 연습을 해보세요 🤗",
         "연예인": [
-            ("마거릿 대처", "https://upload.wikimedia.org/wikipedia/commons/a/aa/Margaret_Thatcher.png"),
-            ("김혜수", "https://upload.wikimedia.org/wikipedia/commons/3/3e/Kim_Hye-soo_from_ACROFAN.jpg")
+            "마거릿 대처",
+            "김혜수"
         ]
     },
     "ENTP": {
@@ -97,8 +119,8 @@ mbti_info = {
         "장점_팁": "창의성과 논리력을 새로운 시스템 개발에 활용해보세요 🚀",
         "단점_팁": "중요한 일에 에너지를 집중하고 타인의 의견도 존중해보세요 🎯",
         "연예인": [
-            ("마크 트웨인", "https://upload.wikimedia.org/wikipedia/commons/0/0c/Mark_Twain_by_AF_Bradley.jpg"),
-            ("이영자", "https://upload.wikimedia.org/wikipedia/commons/1/15/Lee_Yeong-ja_in_2020.jpg")
+            "마크 트웨인",
+            "이영자"
         ]
     },
     "ENFP": {
@@ -108,8 +130,8 @@ mbti_info = {
         "장점_팁": "다양한 사람과의 소통에서 창의력을 발휘해보세요 🎭",
         "단점_팁": "일정을 정리하고 목표를 설정해 집중력을 높여보세요 📋🖊️",
         "연예인": [
-            ("로버트 다우니 주니어", "https://upload.wikimedia.org/wikipedia/commons/2/23/Robert_Downey_Jr_2014_Comic_Con_%28cropped%29.jpg"),
-            ("유재석", "https://upload.wikimedia.org/wikipedia/commons/3/3f/Yoo_Jae-suk_in_2019.jpg")
+            "로버트 다우니 주니어",
+            "유재석"
         ]
     },
     "ENFJ": {
@@ -119,8 +141,8 @@ mbti_info = {
         "장점_팁": "조직 내 리더로서 팀원과 조화를 이루어보세요 🧑‍🤝‍🧑",
         "단점_팁": "자신을 돌보는 시간을 확보하세요 🧘‍♀️",
         "연예인": [
-            ("바락 오바마", "https://upload.wikimedia.org/wikipedia/commons/8/8d/President_Barack_Obama.jpg"),
-            ("박보영", "https://upload.wikimedia.org/wikipedia/commons/f/ff/Park_Bo-young_from_ACROFAN.jpg")
+            "바락 오바마",
+            "박보영"
         ]
     },
     "ESTJ": {
@@ -130,8 +152,8 @@ mbti_info = {
         "장점_팁": "업무 관리와 책임 있는 역할에서 강점을 발휘해보세요 🛠️",
         "단점_팁": "다른 의견을 존중하고 융통성을 길러보세요 🌈",
         "연예인": [
-            ("저지 주디", "https://upload.wikimedia.org/wikipedia/commons/6/60/Judge_Judy_Sheindlin_2012.jpg"),
-            ("이순재", "https://upload.wikimedia.org/wikipedia/commons/e/e2/Lee_Soon-jae_at_BIFF_2017.jpg")
+            "저지 주디",
+            "이순재"
         ]
     },
     "ESTP": {
@@ -141,8 +163,8 @@ mbti_info = {
         "장점_팁": "위기 대처능력과 실행력을 살려 도전적인 일에 도전해보세요 🏆",
         "단점_팁": "장기적 목표를 세우고 꾸준히 추진해보세요 🌱",
         "연예인": [
-            ("도널드 트럼프", "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg"),
-            ("이수근", "https://upload.wikimedia.org/wikipedia/commons/4/40/Lee_Soo-geun_in_2019.jpg")
+            "도널드 트럼프",
+            "이수근"
         ]
     },
     "ESFP": {
@@ -152,8 +174,8 @@ mbti_info = {
         "장점_팁": "사람들과 어울리며 예술적 재능을 발휘해보세요 🎨",
         "단점_팁": "중요한 결정 전에 충분히 생각하는 습관을 들여보세요 🤔",
         "연예인": [
-            ("마릴린 먼로", "https://upload.wikimedia.org/wikipedia/commons/b/ba/Marilyn_Monroe_1961.jpg"),
-            ("이효리", "https://upload.wikimedia.org/wikipedia/commons/3/3b/Lee_Hyori_on_March_29%2C_2013.jpg")
+            "마릴린 먼로",
+            "이효리"
         ]
     },
     "ESFJ": {
@@ -163,8 +185,8 @@ mbti_info = {
         "장점_팁": "사람들을 모으고 돌보는 능력을 살려보세요 💐",
         "단점_팁": "자신의 의견도 소중히 여기고 표현하는 연습을 해보세요 🗣️",
         "연예인": [
-            ("테일러 스위프트", "https://upload.wikimedia.org/wikipedia/commons/b/b5/191125_Taylor_Swift_at_the_2019_American_Music_Awards_%28cropped%29.png"),
-            ("전현무", "https://upload.wikimedia.org/wikipedia/commons/6/66/Jun_Hyun-moo_in_December_2021.jpg")
+            "테일러 스위프트",
+            "전현무"
         ]
     },
     "ISTJ": {
@@ -174,8 +196,8 @@ mbti_info = {
         "장점_팁": "세부 사항을 꼼꼼히 살피는 능력을 업무에 활용해보세요 📋",
         "단점_팁": "작은 변화부터 시도하며 적응력을 키워보세요 🌱",
         "연예인": [
-            ("퀸 엘리자베스 2세", "https://upload.wikimedia.org/wikipedia/commons/b/b6/Queen_Elizabeth_II_in_March_2015.jpg"),
-            ("신동엽", "https://upload.wikimedia.org/wikipedia/commons/9/91/Shin_Dong-yup_in_Jan_2019.jpg")
+            "퀸 엘리자베스 2세",
+            "신동엽"
         ]
     },
     "ISTP": {
@@ -185,8 +207,8 @@ mbti_info = {
         "장점_팁": "기술적 문제를 해결하는 능력을 살려보세요 ⚙️",
         "단점_팁": "감정을 표현하고 장기적 목표를 세워보세요 🎯",
         "연예인": [
-            ("클린트 이스트우드", "https://upload.wikimedia.org/wikipedia/commons/a/ac/Clint_Eastwood_2010.jpg"),
-            ("현빈", "https://upload.wikimedia.org/wikipedia/commons/9/9e/Hyun_Bin_at_Canton_Fair_Complex_for_Tom_Ford_on_March_31%2C_2023_%282%29.jpg")
+            "클린트 이스트우드",
+            "현빈"
         ]
     },
     "ISFP": {
@@ -196,8 +218,8 @@ mbti_info = {
         "장점_팁": "예술적 감각을 디자인이나 음악 등에 활용해보세요 🎵",
         "단점_팁": "작은 목표를 세우고 성취감을 맛보세요 ✅",
         "연예인": [
-            ("마이클 잭슨", "https://upload.wikimedia.org/wikipedia/commons/4/44/Michael_jackson_1757322_cropped.jpg"),
-            ("박서준", "https://upload.wikimedia.org/wikipedia/commons/a/a0/Park_Seo-joon_at_the_Park_Seo-joon_Asia_Tour_%27Guess_Who%3F%27_Fan_Meeting_on_July_2022_01.jpg")
+            "마이클 잭슨",
+            "박서준"
         ]
     },
     "ISFJ": {
@@ -207,8 +229,8 @@ mbti_info = {
         "장점_팁": "세심함과 배려심을 교육, 의료 등 돌봄 분야에 활용해보세요 🏥",
         "단점_팁": "자신의 의견을 표현하고 새로운 경험을 시도해보세요 🌈",
         "연예인": [
-            ("케이트 미들턴", "https://upload.wikimedia.org/wikipedia/commons/5/5e/Duchess_of_Cambridge_at_National_Portrait_Gallery.jpg"),
-            ("수지", "https://upload.wikimedia.org/wikipedia/commons/4/40/Suzy_at_Asia_Artists_Awards_on_December_2%2C_2020_04.png")
+            "케이트 미들턴",
+            "수지"
         ]
     }
 }
@@ -238,21 +260,29 @@ if selected_mbti:
     st.subheader("🌟 같은 MBTI 연예인")
     col1, col2 = st.columns(2)
     
-    for i, (name, img_url) in enumerate(info["연예인"]):
-        img = load_image(img_url)
+    for i, name in enumerate(info["연예인"]):
+        # 이름으로 이미지 생성
+        img = get_character_image(name, selected_mbti)
+        
         if i % 2 == 0:
             with col1:
-                if img is not None:
-                    st.image(img, caption=f"🎬 {name}", use_container_width=True)
-                else:
-                    # 이미지를 불러올 수 없을 때 대체 이미지 표시
-                    placeholder = get_placeholder_image(name)
-                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_container_width=True)
+                # 이미지를 base64로 표시
+                img_str = get_image_base64(img)
+                st.markdown(f"""
+                <div style="text-align: center; border-radius: 10px; overflow: hidden; 
+                            background-color: #f0f0f0; padding: 10px;">
+                    <img src="data:image/jpeg;base64,{img_str}" style="width: 100%; border-radius: 10px;">
+                    <p style="margin-top: 8px; font-weight: bold;">🎬 {name}</p>
+                </div>
+                """, unsafe_allow_html=True)
         else:
             with col2:
-                if img is not None:
-                    st.image(img, caption=f"🎬 {name}", use_container_width=True)
-                else:
-                    # 이미지를 불러올 수 없을 때 대체 이미지 표시
-                    placeholder = get_placeholder_image(name)
-                    st.image(placeholder, caption=f"🎬 {name} (이미지 로드 실패)", use_container_width=True)
+                # 이미지를 base64로 표시
+                img_str = get_image_base64(img)
+                st.markdown(f"""
+                <div style="text-align: center; border-radius: 10px; overflow: hidden; 
+                            background-color: #f0f0f0; padding: 10px;">
+                    <img src="data:image/jpeg;base64,{img_str}" style="width: 100%; border-radius: 10px;">
+                    <p style="margin-top: 8px; font-weight: bold;">🎬 {name}</p>
+                </div>
+                """, unsafe_allow_html=True)
