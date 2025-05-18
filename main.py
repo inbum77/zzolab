@@ -1,60 +1,407 @@
-import streamlit as st
-import base64
-from PIL import Image, ImageDraw, ImageFont
-from io import BytesIO
+mbti_info = {
+    "INTJ": {
+        "성격": "전략적이고 독립적인 사고를 좋아하는 분석가예요 🧠📊",
+        "장점": ["계획적임 ✅", "문제 해결에 능함 🛠️", "자기 주도적임 🚀"],
+        "단점": ["완벽주의 성향 😵", "감정을 잘 드러내지 않음 😐", "융통성이 부족할 수 있음 🔒"],
+        "장점_팁": "계획적인 면을 살려 프로젝트를 주도해보세요! 💼✨",
+        "단점_팁": "감정을 나누고, 유연하게 대처하는 연습을 해보세요 🌿🗣️",
+        "연예인": [
+            "엘론 머스크",
+            "아이유"
+        ]
+    },
+    "INTP": {
+        "성격": "호기심 많고 분석적인 철학자예요 🤓🔍",
+        "장점": ["창의적 🎨", "논리적 사고 🧠", "독립적 🧍‍♂️"],
+        "단점": ["현실 감각 부족 🌫️", "감정 표현 어려움 😶"],
+        "장점_팁": "복잡한 문제 해결 능력을 연구나 기획에 활용해보세요! 🧪",
+        "단점_팁": "소통을 통해 아이디어를 현실과 연결해보세요. 💬🔗",
+        "연예인": [
+            "앨버트 아인슈타인",
+            "공유"
+        ]
+    },
+    "INFJ": {
+        "성격": "통찰력 있고 이상주의적인 조언자예요 🔮💬",
+        "장점": ["깊은 공감 능력 ❤️", "통찰력 👁️", "도움 주기를 좋아함 🤝"],
+        "단점": ["내향적 경향 🤐", "감정 기복 📉"],
+        "장점_팁": "타인을 이해하고 돕는 능력을 상담이나 교육 분야에 살려보세요 🎓",
+        "단점_팁": "스스로의 감정을 관리하며 자기 돌봄을 잊지 마세요 🌸",
+        "연예인": [
+            "칼 융",
+            "정해인"
+        ]
+    },
+    "INFP": {
+        "성격": "이상과 가치를 중시하는 낭만주의자예요 🌈📚",
+        "장점": ["창의적 🎭", "이타적 💖", "깊은 내면의 성찰 🤔"],
+        "단점": ["현실 도피 경향 🕳️", "결단력 부족 😓"],
+        "장점_팁": "예술, 문학, 봉사활동 등 가치 있는 활동으로 표현해보세요 🎨",
+        "단점_팁": "작은 결정부터 실천하며 현실감을 키워보세요 🪴",
+        "연예인": [
+            "윌리엄 셰익스피어",
+            "태연"
+        ]
+    },
+    "ENTJ": {
+        "성격": "리더십 있고 추진력 강한 통솔자예요 👑⚡",
+        "장점": ["결단력 💪", "목표 지향적 🎯", "통솔력 👍"],
+        "단점": ["지나치게 경쟁적 🔥", "감정에 무관심할 수 있음 😶"],
+        "장점_팁": "조직을 이끄는 리더 역할에서 진가를 발휘해보세요 🏢",
+        "단점_팁": "주변 사람들의 감정을 살피고 배려하는 연습을 해보세요 🤗",
+        "연예인": [
+            "마거릿 대처",
+            "김혜수"
+        ]
+    },
+    "ENTP": {
+        "성격": "호기심 많고 논쟁을 즐기는 혁신가예요 💭🔍",
+        "장점": ["창의적 💡", "논리적 🧩", "적응력 있음 🐬"],
+        "단점": ["규칙을 싫어함 🚫", "집중력 부족 📢", "논쟁적 🔥"],
+        "장점_팁": "창의성과 논리력을 새로운 시스템 개발에 활용해보세요 🚀",
+        "단점_팁": "중요한 일에 에너지를 집중하고 타인의 의견도 존중해보세요 🎯",
+        "연예인": [
+            "마크 트웨인",
+            "이영자"
+        ]
+    },
+    "ENFP": {
+        "성격": "에너지 넘치고 창의적인 열정가예요 🌟🎉",
+        "장점": ["사교적 🗣️", "긍정적 🌞", "아이디어 풍부 💡"],
+        "단점": ["산만할 수 있음 🌀", "계획 부족 📆❌"],
+        "장점_팁": "다양한 사람과의 소통에서 창의력을 발휘해보세요 🎭",
+        "단점_팁": "일정을 정리하고 목표를 설정해 집중력을 높여보세요 📋🖊️",
+        "연예인": [
+            "로버트 다우니 주니어",
+            "유재석"
+        ]
+    },
+    "ENFJ": {
+        "성격": "따뜻하고 열정적인 리더예요 🔥🤝",
+        "장점": ["카리스마 있음 ✨", "공감 능력 뛰어남 ❤️", "조직적 🗂️"],
+        "단점": ["자기 희생적 경향 😓", "완벽주의 📏"],
+        "장점_팁": "조직 내 리더로서 팀원과 조화를 이루어보세요 🧑‍🤝‍🧑",
+        "단점_팁": "자신을 돌보는 시간을 확보하세요 🧘‍♀️",
+        "연예인": [
+            "바락 오바마",
+            "박보영"
+        ]
+    },
+    "ESTJ": {
+        "성격": "실용적이고 책임감 강한 관리자예요 📋🔧",
+        "장점": ["체계적 📊", "현실적 🧱", "리더십 강함 🧭"],
+        "단점": ["융통성 부족 🔒", "감정에 둔감할 수 있음 😐"],
+        "장점_팁": "업무 관리와 책임 있는 역할에서 강점을 발휘해보세요 🛠️",
+        "단점_팁": "다른 의견을 존중하고 융통성을 길러보세요 🌈",
+        "연예인": [
+            "저지 주디",
+            "이순재"
+        ]
+    },
+    "ESTP": {
+        "성격": "행동력 있고 모험적인 사업가예요 🏄‍♂️💼",
+        "장점": ["실용적 🛠️", "적응력 있음 🦎", "행동력 강함 🚀"],
+        "단점": ["인내심 부족 ⏱️", "계획성 부족 📝❌"],
+        "장점_팁": "위기 대처능력과 실행력을 살려 도전적인 일에 도전해보세요 🏆",
+        "단점_팁": "장기적 목표를 세우고 꾸준히 추진해보세요 🌱",
+        "연예인": [
+            "도널드 트럼프",
+            "이수근"
+        ]
+    },
+    "ESFP": {
+        "성격": "자유롭고 즉흥적인 연예인 기질이에요 🎭✨",
+        "장점": ["사교적 🥂", "에너지 넘침 ⚡", "긍정적 🌈"],
+        "단점": ["충동적 🎯", "계획성 부족 📅❌"],
+        "장점_팁": "사람들과 어울리며 예술적 재능을 발휘해보세요 🎨",
+        "단점_팁": "중요한 결정 전에 충분히 생각하는 습관을 들여보세요 🤔",
+        "연예인": [
+            "마릴린 먼로",
+            "이효리"
+        ]
+    },
+    "ESFJ": {
+        "성격": "인기 많고 세심한 사교가예요 🥰👋",
+        "장점": ["협조적 🤝", "조직적 📋", "사람 관계에 능함 👥"],
+        "단점": ["비판에 민감함 😢", "지나친 동조 경향 👍"],
+        "장점_팁": "사람들을 모으고 돌보는 능력을 살려보세요 💐",
+        "단점_팁": "자신의 의견도 소중히 여기고 표현하는 연습을 해보세요 🗣️",
+        "연예인": [
+            "테일러 스위프트",
+            "전현무"
+        ]
+    },
+    "ISTJ": {
+        "성격": "신중하고 책임감 있는 현실주의자예요 📝🧮",
+        "장점": ["믿음직함 🤞", "체계적 📊", "꼼꼼함 🔍"],
+        "단점": ["변화를 꺼림 🔄❌", "융통성 부족 🚧"],
+        "장점_팁": "세부 사항을 꼼꼼히 살피는 능력을 업무에 활용해보세요 📋",
+        "단점_팁": "작은 변화부터 시도하며 적응력을 키워보세요 🌱",
+        "연예인": [
+            "퀸 엘리자베스 2세",
+            "신동엽"
+        ]
+    },
+    "ISTP": {
+        "성격": "조용하고 분석적인 기술자예요 🔧🔍",
+        "장점": ["실용적 🛠️", "적응력 강함 🦎", "문제해결 능력 🧩"],
+        "단점": ["감정표현 부족 😶", "장기적 계획 어려움 🗓️"],
+        "장점_팁": "기술적 문제를 해결하는 능력을 살려보세요 ⚙️",
+        "단점_팁": "감정을 표현하고 장기적 목표를 세워보세요 🎯",
+        "연예인": [
+            "클린트 이스트우드",
+            "현빈"
+        ]
+    },
+    "ISFP": {
+        "성격": "감성적이고 예술적인 모험가예요 🎨🦋",
+        "장점": ["창의적 🖌️", "감성이 풍부함 💝", "평화로움 🕊️"],
+        "단점": ["경쟁을 피함 🏆❌", "계획성 부족 📆"],
+        "장점_팁": "예술적 감각을 디자인이나 음악 등에 활용해보세요 🎵",
+        "단점_팁": "작은 목표를 세우고 성취감을 맛보세요 ✅",
+        "연예인": [
+            "마이클 잭슨",
+            "박서준"
+        ]
+    },
+    "ISFJ": {
+        "성격": "따뜻하고 헌신적인 수호자예요 🛡️🧸",
+        "장점": ["배려심 깊음 💕", "책임감 있음 📋", "꼼꼼함 🔍"],
+        "단점": ["변화를 두려워함 🔄😨", "자기주장 부족 🤐"],
+        "장점_팁": "세심함과 배려심을 교육, 의료 등 돌봄 분야에 활용해보세요 🏥",
+        "단점_팁": "자신의 의견을 표현하고 새로운 경험을 시도해보세요 🌈",
+        "연예인": [
+            "케이트 미들턴",
+            "수지"
+        ]
+    }
+}
 
-# 텍스트로 이미지 생성하는 함수
-def create_text_image(name, bgColor=(240, 240, 240), textColor=(0, 0, 0), size=(200, 200)):
-    img = Image.new('RGB', size, color=bgColor)
+st.set_page_config(page_title="MBTI 성격 분석기", page_icon="🧬", layout="wide")
+st.title("🧬 MBTI 성격 분석기")
+st.markdown("MBTI를 선택하면 당신의 성격, 장점과 단점, 팁, 그리고 같은 유형의 연예인을 알려드릴게요! 😄")
+
+selected_mbti = st.selectbox("👉 당신의 MBTI를 선택하세요!", list(mbti_info.keys()))
+
+if selected_mbti:
+    info = mbti_info[selected_mbti]
+    
+    col1, col2 = st.columns([1, 1.5])
+    
+    with col1:
+        st.subheader(f"📌 {selected_mbti}의 성격")
+        st.write(info["성격"])
+
+        st.subheader("👍 장점")
+        for good in info["장점"]:
+            st.markdown(f"- {good}")
+        st.markdown(f"💡 **장점을 살리는 방법**: {info['장점_팁']}")
+
+        st.subheader("👎 단점")
+        for bad in info["단점"]:
+            st.markdown(f"- {bad}")
+        st.markdown(f"🛠️ **단점을 줄이는 방법**: {info['단점_팁']}")
+    
+    with col2:
+        import streamlit as st
+import random
+import math
+from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from io import BytesIO
+import base64
+
+# 프로필 카드 생성 함수
+def create_profile_card(name, mbti_type, size=(400, 400)):
+    # MBTI 유형별 색상 및 키워드
+    mbti_info = {
+        "INTJ": {
+            "color": (75, 0, 130),   # 보라색
+            "keywords": ["분석가", "전략가", "계획적", "독립적"],
+            "icon": "🧠"
+        },
+        "INTP": {
+            "color": (25, 25, 112),  # 미드나이트 블루
+            "keywords": ["논리적", "철학자", "분석적", "창의적"],
+            "icon": "🔍"
+        },
+        "INFJ": {
+            "color": (102, 51, 153),  # 보라색
+            "keywords": ["통찰력", "이상주의", "조용한 열정", "예언자"],
+            "icon": "🔮"
+        },
+        "INFP": {
+            "color": (186, 85, 211),  # 중간 자주색
+            "keywords": ["낭만적", "이상주의자", "예술가", "꿈꾸는 사람"],
+            "icon": "🌈"
+        },
+        "ENTJ": {
+            "color": (139, 0, 0),    # 다크 레드
+            "keywords": ["리더", "지휘자", "결단력", "통솔자"],
+            "icon": "👑"
+        },
+        "ENTP": {
+            "color": (255, 69, 0),   # 레드 오렌지
+            "keywords": ["혁신가", "발명가", "도전적", "논쟁가"],
+            "icon": "💡"
+        },
+        "ENFJ": {
+            "color": (199, 21, 133),  # 미디엄 바이올렛 레드
+            "keywords": ["선도자", "교사", "카리스마", "영감"],
+            "icon": "🌟"
+        },
+        "ENFP": {
+            "color": (255, 20, 147),  # 딥 핑크
+            "keywords": ["열정적", "자유로움", "활력", "재기발랄"],
+            "icon": "✨"
+        },
+        "ISTJ": {
+            "color": (47, 79, 79),   # 다크 슬레이트 그레이
+            "keywords": ["책임감", "체계적", "현실적", "꼼꼼함"],
+            "icon": "📋"
+        },
+        "ISTP": {
+            "color": (70, 130, 180),  # 스틸 블루
+            "keywords": ["기술자", "도구적", "분석적", "실용주의자"],
+            "icon": "🔧"
+        },
+        "ISFJ": {
+            "color": (85, 107, 47),  # 다크 올리브 그린
+            "keywords": ["수호자", "헌신적", "전통적", "세심함"],
+            "icon": "🛡️"
+        },
+        "ISFP": {
+            "color": (154, 205, 50),  # 옐로우 그린
+            "keywords": ["예술가", "모험가", "감성적", "조화로움"],
+            "icon": "🎨"
+        },
+        "ESTJ": {
+            "color": (0, 100, 0),    # 다크 그린
+            "keywords": ["관리자", "체계적", "실용적", "직접적"],
+            "icon": "📊"
+        },
+        "ESTP": {
+            "color": (46, 139, 87),  # 씨 그린
+            "keywords": ["기업가", "모험가", "실용적", "즉흥적"],
+            "icon": "🚀"
+        },
+        "ESFJ": {
+            "color": (30, 144, 255),  # 도저 블루
+            "keywords": ["친절함", "인기 많음", "조화로움", "배려"],
+            "icon": "💕"
+        },
+        "ESFP": {
+            "color": (0, 191, 255),  # 딥 스카이 블루
+            "keywords": ["연예인", "즐거움", "열정적", "사교적"],
+            "icon": "🎭"
+        }
+    }
+    
+    info = mbti_info.get(mbti_type.upper(), {
+        "color": (100, 100, 100),
+        "keywords": ["미정", "알 수 없음"],
+        "icon": "❓"
+    })
+    
+    main_color = info["color"]
+    keywords = info["keywords"]
+    icon = info["icon"]
+    
+    # 배경색 명도에 따라 텍스트 색상 결정
+    brightness = (main_color[0] * 299 + main_color[1] * 587 + main_color[2] * 114) / 1000
+    text_color = (255, 255, 255) if brightness < 128 else (20, 20, 20)
+    
+    # 이미지 생성
+    img = Image.new('RGB', size, color=main_color)
     draw = ImageDraw.Draw(img)
     
-    # 텍스트 중앙에 배치
-    text = name
-    text_width = draw.textlength(text, font=None)
-    text_position = ((size[0] - text_width) / 2, size[1] / 2 - 10)
+    # 배경 효과 추가 (패턴, 그라데이션 효과)
+    # 랜덤 점 찍기
+    for _ in range(300):
+        x = random.randint(0, size[0])
+        y = random.randint(0, size[1])
+        r = random.randint(1, 3)
+        # 약간 밝거나 어두운 점들
+        dot_color = tuple(min(255, max(0, c + random.randint(-20, 20))) for c in main_color)
+        draw.ellipse((x-r, y-r, x+r, y+r), fill=dot_color)
     
-    # 텍스트 그리기
-    draw.text(text_position, text, fill=textColor)
+    # 프로필 서클 (중앙에 큰 원)
+    circle_radius = size[0] // 4
+    circle_center = (size[0] // 2, size[1] // 3)
+    
+    # 원 그리기 (그림자 효과)
+    shadow_color = tuple(max(0, c - 30) for c in main_color)
+    for i in range(3):
+        draw.ellipse((
+            circle_center[0] - circle_radius - i, 
+            circle_center[1] - circle_radius - i,
+            circle_center[0] + circle_radius + i, 
+            circle_center[1] + circle_radius + i
+        ), fill=shadow_color)
+    
+    # 실제 원
+    draw.ellipse((
+        circle_center[0] - circle_radius, 
+        circle_center[1] - circle_radius,
+        circle_center[0] + circle_radius, 
+        circle_center[1] + circle_radius
+    ), fill=main_color)
+    
+    # 원 안에 이니셜 또는 아이콘 넣기
+    initials = ''.join([c[0] for c in name.split() if c])
+    if not initials:
+        initials = icon
+    
+    # 이니셜 또는 아이콘 크기 설정
+    font_size = circle_radius 
+    position = (circle_center[0] - font_size//2, circle_center[1] - font_size//2)
+    
+    # 이니셜 텍스트
+    draw.text(position, initials if len(initials) <= 2 else icon, fill=text_color, font_size=font_size)
+    
+    # 이름 표시
+    name_position = (size[0] // 2, circle_center[1] + circle_radius + 30)
+    draw.text((name_position[0] - len(name) * 4, name_position[1]), name, fill=text_color, font_size=24)
+    
+    # MBTI 표시
+    mbti_position = (size[0] // 2, name_position[1] + 30)
+    draw.text((mbti_position[0] - len(mbti_type) * 4, mbti_position[1]), mbti_type, fill=text_color, font_size=22)
+    
+    # 키워드 태그 추가
+    keywords_y = mbti_position[1] + 50
+    for i, keyword in enumerate(keywords[:3]):  # 최대 3개 키워드만 표시
+        # 태그 배경 (둥근 모서리 직사각형)
+        tag_width = len(keyword) * 10 + 20
+        tag_height = 24
+        tag_x = size[0] // 2 - tag_width // 2
+        tag_y = keywords_y + i * (tag_height + 10)
+        
+        # 태그 배경
+        lighter_color = tuple(min(255, c + 50) for c in main_color)
+        draw.rounded_rectangle(
+            (tag_x, tag_y, tag_x + tag_width, tag_y + tag_height),
+            radius=7,
+            fill=lighter_color
+        )
+        
+        # 태그 텍스트
+        draw.text(
+            (tag_x + 10, tag_y + 3), 
+            keyword, 
+            fill=text_color,
+            font_size=14
+        )
+    
+    # 약간의 블러 효과 적용
+    img = img.filter(ImageFilter.GaussianBlur(radius=0.5))
     
     return img
 
 # 이미지를 base64로 인코딩하여 표시하는 함수
 def get_image_base64(img):
     buffered = BytesIO()
-    img.save(buffered, format="JPEG")
+    img.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return img_str
-
-# 캐릭터 이미지 생성 함수 (각 MBTI별 특색 있는 색상 사용)
-def get_character_image(name, mbti_type):
-    # MBTI 유형별 색상 매핑
-    color_map = {
-        "INTJ": (75, 0, 130),   # 보라색 - 분석가
-        "INTP": (0, 0, 139),    # 짙은 파란색 - 사색가
-        "INFJ": (147, 112, 219), # 라벤더색 - 예언자
-        "INFP": (221, 160, 221), # 연보라색 - 중재자
-        "ENTJ": (178, 34, 34),  # 적갈색 - 통솔자
-        "ENTP": (255, 69, 0),   # 주황빨간색 - 발명가
-        "ENFJ": (255, 20, 147), # 핫핑크 - 선도자
-        "ENFP": (255, 105, 180), # 분홍색 - 활동가
-        "ISTJ": (47, 79, 79),   # 짙은 회색 - 실무자
-        "ISTP": (105, 105, 105), # 회색 - 장인
-        "ISFJ": (107, 142, 35), # 올리브색 - 수호자
-        "ISFP": (154, 205, 50), # 연두색 - 탐험가
-        "ESTJ": (0, 100, 0),    # 짙은 녹색 - 경영자
-        "ESTP": (34, 139, 34),  # 녹색 - 기업가
-        "esfj": (70, 130, 180), # 강철 파란색 - 집정관
-        "ESFP": (30, 144, 255)  # 하늘색 - 연예인
-    }
-    
-    # 해당 MBTI 색상 가져오기 (기본값은 회색)
-    bg_color = color_map.get(mbti_type, (200, 200, 200))
-    
-    # 텍스트 색상은 배경 색상이 어두우면 밝게, 밝으면 어둡게
-    brightness = (bg_color[0] * 299 + bg_color[1] * 587 + bg_color[2] * 114) / 1000
-    text_color = (255, 255, 255) if brightness < 128 else (0, 0, 0)
-    
-    return create_text_image(name, bg_color, text_color)
 
 mbti_info = {
     "INTJ": {
