@@ -1,4 +1,18 @@
 import streamlit as st
+import requests
+from PIL import Image
+from io import BytesIO
+
+# 이미지를 캐시하여 재사용하는 함수
+@st.cache_data
+def load_image(url):
+    try:
+        response = requests.get(url)
+        img = Image.open(BytesIO(response.content))
+        return img
+    except Exception as e:
+        st.error(f"이미지를 불러오는 중 오류가 발생했습니다: {e}")
+        return None
 
 mbti_info = {
     "INTJ": {
@@ -205,9 +219,16 @@ if selected_mbti:
     col1, col2 = st.columns(2)
     
     for i, (name, img_url) in enumerate(info["연예인"]):
+        img = load_image(img_url)
         if i % 2 == 0:
             with col1:
-                st.image(img_url, width=200, caption=f"🎬 {name}")
+                if img is not None:
+                    st.image(img, caption=f"🎬 {name}", use_column_width=True)
+                else:
+                    st.write(f"🎬 {name}")
         else:
             with col2:
-                st.image(img_url, width=200, caption=f"🎬 {name}")
+                if img is not None:
+                    st.image(img, caption=f"🎬 {name}", use_column_width=True)
+                else:
+                    st.write(f"🎬 {name}")
